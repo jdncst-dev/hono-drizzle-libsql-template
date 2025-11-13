@@ -160,10 +160,10 @@ describe('users routes', () => {
 
   it('prevents non-admin users from listing all users', async () => {
     const { user } = await createUserFixture()
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
 
     const response = await client.users.$get({
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(response.status).toBe(HttpStatusCodes.FORBIDDEN)
@@ -183,7 +183,7 @@ describe('users routes', () => {
       email: payload.email,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      role: 'student'
+      role: 'user'
     })
     expectTypeOf(body.id).toBeString()
     expect(new Date(body.createdAt).toString()).not.toBe('Invalid Date')
@@ -204,8 +204,8 @@ describe('users routes', () => {
     expect(body).toHaveLength(2)
     expect(body).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: userA.user.id, email: userA.user.email, role: 'student' }),
-        expect.objectContaining({ id: userB.user.id, email: userB.user.email, role: 'student' })
+        expect.objectContaining({ id: userA.user.id, email: userA.user.email, role: 'user' }),
+        expect.objectContaining({ id: userB.user.id, email: userB.user.email, role: 'user' })
       ])
     )
     expect(body.every(user => !('password' in user))).toBe(true)
@@ -233,11 +233,11 @@ describe('users routes', () => {
 
   it('allows a user to retrieve their own record', async () => {
     const { user } = await createUserFixture()
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
 
     const response = await usersById.$get({
       param: { id: user.id },
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(response.status).toBe(HttpStatusCodes.OK)
@@ -248,11 +248,11 @@ describe('users routes', () => {
   it('prevents users from retrieving other user records', async () => {
     const { user: firstUser } = await createUserFixture()
     const { user: secondUser } = await createUserFixture()
-    const studentToken = await tokenForUser(firstUser)
+    const userToken = await tokenForUser(firstUser)
 
     const response = await usersById.$get({
       param: { id: secondUser.id },
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(response.status).toBe(HttpStatusCodes.FORBIDDEN)
@@ -298,14 +298,14 @@ describe('users routes', () => {
 
   it('updates mutable fields without returning sensitive data', async () => {
     const { user } = await createUserFixture()
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
     const response = await usersById.$patch({
       param: { id: user.id },
       json: {
         firstName: 'Updated',
         password: 'AnotherSup3rSecret!'
       },
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(response.status).toBe(HttpStatusCodes.OK)
@@ -329,7 +329,7 @@ describe('users routes', () => {
 
   it('hashes passwords on patch updates', async () => {
     const { user } = await createUserFixture({ password: 'PlainSecret1!' })
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
 
     const existing = await db.query.users.findFirst({
       where(fields, operators) {
@@ -342,7 +342,7 @@ describe('users routes', () => {
     const response = await usersById.$patch({
       param: { id: user.id },
       json: { password: 'PlainSecret2!' },
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
     expect(response.status).toBe(HttpStatusCodes.OK)
 
@@ -396,11 +396,11 @@ describe('users routes', () => {
 
   it('requires at least one field when patching', async () => {
     const { user } = await createUserFixture()
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
     const response = await usersById.$patch({
       param: { id: user.id },
       json: {},
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(response.status).toBe(HttpStatusCodes.UNPROCESSABLE_ENTITY)
@@ -453,11 +453,11 @@ describe('users routes', () => {
 
   it('prevents non-admin users from deleting accounts', async () => {
     const { user } = await createUserFixture()
-    const studentToken = await tokenForUser(user)
+    const userToken = await tokenForUser(user)
 
     const deleteResponse = await usersById.$delete({
       param: { id: user.id },
-      header: bearer(studentToken)
+      header: bearer(userToken)
     })
 
     expect(deleteResponse.status).toBe(HttpStatusCodes.FORBIDDEN)
